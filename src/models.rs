@@ -1,17 +1,22 @@
-use diesel::{EqAll, MysqlConnection, QueryDsl, QueryResult, RunQueryDsl};
+use diesel::{
+    sql_types::{Integer, Nullable, Text},
+    EqAll, MysqlConnection, QueryDsl, QueryResult, RunQueryDsl,
+};
 
 use crate::schemas::users;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Queryable, Insertable)]
+#[derive(Debug, Serialize, Deserialize, Queryable, Insertable, QueryId, QueryableByName)]
 pub struct User {
-    id: i32,
+    #[sql_type = "Nullable<Integer>"]
+    id: Option<i32>,
+    #[sql_type = "Text"]
     name: String,
 }
 
 impl User {
-    pub fn new(i: i32, n: String) -> User {
-        User { id: i, name: n }
+    pub fn new(n: String) -> User {
+        User { id: None, name: n }
     }
     pub fn get_all(conn: &MysqlConnection) -> QueryResult<Vec<User>> {
         users::table.load(conn)

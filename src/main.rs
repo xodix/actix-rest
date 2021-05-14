@@ -11,7 +11,7 @@ extern crate diesel;
 
 use diesel::{
     r2d2::{self, ConnectionManager},
-    MysqlConnection,
+    MysqlConnection, RunQueryDsl,
 };
 use models::User;
 
@@ -41,6 +41,15 @@ async fn insert(pool: web::Data<DBPool>, user: Json<Vec<models::User>>) -> impl 
     HttpResponse::Ok()
 }
 
+#[get("/search")]
+async fn search(pool: web::Data<DBPool>) -> impl Responder {
+    let conn = pool.get().expect("DB errror");
+    let x: Vec<User> = diesel::sql_query("SELECT * FROM `users`")
+        .load(&conn)
+        .unwrap();
+    HttpResponse::Ok().json2(&x)
+}
+
 const PORT: u16 = 3000;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -61,6 +70,7 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .service(by_id)
             .service(insert)
+            .service(search)
     })
     .bind(format!("localhost:{}", PORT))?
     .run()
