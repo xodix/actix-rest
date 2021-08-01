@@ -39,18 +39,18 @@ impl Book {
         books::table.load(conn)
     }
 
+    pub fn get_by_id(conn: &MysqlConnection, id: Vec<u8>) -> QueryResult<Vec<Book>> {
+        all_books::books
+            .filter(all_books::book_id.eq_all(id))
+            .load(conn)
+    }
+
     pub fn insert(conn: &MysqlConnection, vals: Vec<Book>) -> QueryResult<usize> {
         diesel::insert_into(books::table).values(vals).execute(conn)
     }
 
     pub fn remove(conn: &MysqlConnection, id: Vec<u8>) -> QueryResult<usize> {
         diesel::delete(all_books::books.filter(all_books::book_id.eq_all(id))).execute(conn)
-    }
-
-    pub fn get_by_id(conn: &MysqlConnection, id: Vec<u8>) -> QueryResult<Vec<Book>> {
-        all_books::books
-            .filter(all_books::book_id.eq_all(id))
-            .load(conn)
     }
 
     pub fn change_title(
