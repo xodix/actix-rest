@@ -17,6 +17,7 @@ use diesel::{
 };
 
 mod book;
+mod bookmark;
 mod user;
 
 type DBPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
