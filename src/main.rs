@@ -1,59 +1,38 @@
 use actix_cors::Cors;
 use actix_files::Files;
+use actix_web::http::ContentEncoding;
 use actix_web::{
-    get, post,
+    get, middleware,
     web::{self, Json},
     App, HttpResponse, HttpServer, Responder,
 };
+use std::env;
 
 #[macro_use]
 extern crate diesel;
 
 use diesel::{
     r2d2::{self, ConnectionManager},
-    MysqlConnection, RunQueryDsl,
+    MysqlConnection,
 };
-use models::User;
 
-mod models;
+mod book;
 mod schemas;
 
 type DBPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
 #[get("/")]
 async fn index(pool: web::Data<DBPool>) -> impl Responder {
-    let conn = pool.get().expect("DB error");
-    let user = web::block(move || User::get_all(&conn)).await.unwrap();
-    HttpResponse::Ok().json2(&user)
-}
-
-#[get("/u/{u_id}")]
-async fn by_id(pool: web::Data<DBPool>, u_id: web::Path<i32>) -> impl Responder {
-    let conn = pool.get().expect("DB error");
-    let user = User::get_by_id(&conn, u_id.0).unwrap();
-    HttpResponse::Ok().json2(&user[0])
-}
-
-#[post("/insert")]
-async fn insert(pool: web::Data<DBPool>, user: Json<Vec<models::User>>) -> impl Responder {
     let conn = pool.get().expect("DB err");
-    User::insert(&conn, user.0).expect("error while inserting");
-    HttpResponse::Ok()
+    HttpResponse::Ok().body("{}")
 }
 
-#[get("/search")]
-async fn search(pool: web::Data<DBPool>) -> impl Responder {
-    let conn = pool.get().expect("DB errror");
-    let x: Vec<User> = diesel::sql_query("SELECT * FROM `users`")
-        .load(&conn)
-        .unwrap();
-    HttpResponse::Ok().json2(&x)
-}
+const PORT: u16 = 8080;
 
-const PORT: u16 = 3000;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let url = "mysql://root@localhost:3306/test_db";
+    dotenv::dotenv().ok();
+    let url = env::var("DB_URL").expect("Cannot read db url");
     let manager = ConnectionManager::<MysqlConnection>::new(url);
     let pool = r2d2::Pool::builder()
         .build(manager)
@@ -66,11 +45,9 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .data(pool.clone())
             .wrap(Cors::permissive())
+            .wrap(middleware::Compress::new(ContentEncoding::Gzip))
             .service(Files::new("/static", "static").show_files_listing())
             .service(index)
-            .service(by_id)
-            .service(insert)
-            .service(search)
     })
     .bind(format!("localhost:{}", PORT))?
     .run()
