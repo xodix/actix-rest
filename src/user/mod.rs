@@ -5,18 +5,27 @@ use serde::{Deserialize, Serialize};
 use user_schema::users;
 use user_schema::users::dsl as all_users;
 
+/// User struct corresponding to the user schema
 #[derive(Debug, Insertable, Queryable, Serialize, Deserialize)]
 pub struct User {
+    /// hex 16 byte uuid
     user_id: Vec<u8>,
+    /// users name
     name: String,
+    /// users email address
     email: String,
+    /// users phone number
     phone_num: i32,
+    /// users profile picture
     img_url: String,
+    /// users password
     password: String,
+    /// users favourite books
     favourites: String,
 }
 
 impl User {
+    /// create a new user
     pub fn new(
         user_id: Vec<u8>,
         name: String,
@@ -37,28 +46,33 @@ impl User {
         }
     }
 
+    /// get all users and return Result
     pub fn get_all(conn: &MysqlConnection) -> QueryResult<Vec<User>> {
         all_users::users.load(conn)
     }
 
+    /// get user by id and return Result
     pub fn get_by_id(conn: &MysqlConnection, id: Vec<u8>) -> QueryResult<Vec<User>> {
         all_users::users
             .filter(all_users::user_id.eq_all(id))
             .load(conn)
     }
 
+    /// insert users into user table
     pub fn insert(conn: &MysqlConnection, vals: Vec<User>) -> QueryResult<usize> {
         diesel::insert_into(all_users::users)
             .values(vals)
             .execute(conn)
     }
 
+    /// remove users from user table
     pub fn remove(conn: &MysqlConnection, id: Vec<u8>) -> QueryResult<usize> {
         diesel::delete(all_users::users)
             .filter(all_users::user_id.eq_all(id))
             .execute(conn)
     }
 
+    /// change email address of a user
     pub fn change_email(
         conn: &MysqlConnection,
         id: Vec<u8>,
@@ -70,6 +84,7 @@ impl User {
             .execute(conn)
     }
 
+    /// change phone number of a user
     pub fn change_phone_number(
         conn: &MysqlConnection,
         id: Vec<u8>,
@@ -81,6 +96,7 @@ impl User {
             .execute(conn)
     }
 
+    /// change password of a user
     pub fn change_password(
         conn: &MysqlConnection,
         id: Vec<u8>,
@@ -92,6 +108,7 @@ impl User {
             .execute(conn)
     }
 
+    /// add book to users favourites
     pub fn add_favourite(
         conn: &MysqlConnection,
         id: Vec<u8>,
@@ -111,6 +128,7 @@ impl User {
             .execute(conn)
     }
 
+    /// remove books from users favourites
     pub fn remove_favourite(
         conn: &MysqlConnection,
         id: Vec<u8>,
